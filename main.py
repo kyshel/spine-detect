@@ -56,14 +56,14 @@ def get_dcmFilePathList(dcm_dir):
 			if file.endswith(".dcm"):
 				filepath = os.path.join(root, file)
 				dcm_filepath_list += [filepath]
-	 
 	return dcm_filepath_list
 
-
-
-
-
-
+def showDcmInfo(filepath):
+	ds = pydicom.dcmread(file)
+	print(dir(ds))
+	print(ds)
+	plt.imshow(ds.pixel_array, cmap=plt.cm.bone)
+	plt.show()
 
 
 
@@ -72,14 +72,12 @@ if __name__ == "__main__":
 	dcm_filepath_list = get_dcmFilePathList('t')
 	CUT_dcm_filepath_list = dcm_filepath_list[:]
 
-	print(CUT_dcm_filepath_list)
-	print(len(dcm_filepath_list))
- 
-
-
-
+	# print(CUT_dcm_filepath_list)
+	# print(len(dcm_filepath_list))
 
 	for file in CUT_dcm_filepath_list:
+		showDcmInfo(file)
+		exit()
 		dcm2png(file,'png\\'+file+'.png')
 	print('png CREATED')
  

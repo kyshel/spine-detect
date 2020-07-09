@@ -1,0 +1,7 @@
+*
+!base/
+!*.py
+!*.ahk
+!README.md
+!build.txt
+

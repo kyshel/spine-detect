@@ -6,18 +6,19 @@ import png
 import pydicom
 import matplotlib.pyplot as plt
 import time
+from pydicom import dcmread
 
 from PyQt5.QtCore import QDateTime, Qt, QTimer
-from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateTimeEdit,
-                             QDial, QDialog, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
-                             QProgressBar, QPushButton, QRadioButton, QScrollBar, QSizePolicy,
-                             QSlider, QSpinBox, QStyleFactory, QTableWidget, QTabWidget, QTextEdit,
-                             QVBoxLayout, QWidget,QScrollArea, QMainWindow)
-from PyQt5.QtGui import (QPixmap)
+from PyQt5.QtWidgets import (QApplication,QComboBox,
+                             QGridLayout, QHBoxLayout, QVBoxLayout,QLabel,
+                             QPushButton, QWidget,QScrollArea)
+from PyQt5.QtGui import (QPixmap,QIcon)
 
-from PyQt5 import uic
+#from PyQt5 import uic
 
 import re
+
+import json
 
 
 def atoi(text):
@@ -51,7 +52,6 @@ guiData['dir_names'] = sorted(get_immediate_subdirectories(guiData['dataset_dir'
 
 def dcm2png(file_src):
     ds = pydicom.dcmread(file_src)
-
     shape = ds.pixel_array.shape
 
     # Convert to float to avoid overflow or underflow losses.
@@ -68,20 +68,19 @@ def dcm2png(file_src):
 
 
 
-class WidgetGallery(QDialog):
-    def __init__(self, guiData,parent = None):
-        super(WidgetGallery, self).__init__(parent)
-
-        # self.originalPalette = QApplication.palette()
+class WidgetGallery(QScrollArea):
+    def __init__(self,guiData):
+        super(WidgetGallery, self).__init__()
 
         styleComboBox = QComboBox()
-        # styleComboBox.addItems(QStyleFactory.keys())
         styleComboBox.addItems(guiData['dir_names'])
 
         self.studyComboBox = styleComboBox
 
         button1 = QPushButton()
         button1.setText("Button1")
+        #button1.setIcon(QIcon('png/t/study0/image1.dcm.png'))
+
         button1.clicked.connect(self.button1_clicked)
 
         # labelPng = QLabel()
@@ -90,7 +89,6 @@ class WidgetGallery(QDialog):
 
         styleLabel = QLabel("&Style:")
         styleLabel.setBuddy(styleComboBox)
-
 
         topLayout = QHBoxLayout()
         topLayout.addWidget(styleLabel)
@@ -102,12 +100,16 @@ class WidgetGallery(QDialog):
         self.imageLayout = imageLayout
         self.label1=styleLabel
 
+        jsonLayout = QHBoxLayout()
+
+
 
 
 
         mainLayout = QGridLayout()
         mainLayout.addLayout(topLayout, 0, 0,1,1)
         mainLayout.addLayout(imageLayout, 1, 0,1,1)
+        mainLayout.addLayout(jsonLayout, 2, 0, 1, 1)
         self.mainLayout = mainLayout
 
         #self.initUI()
@@ -128,107 +130,76 @@ class WidgetGallery(QDialog):
         self.label1.setText(current_study)
         dcm_dir =  self.guiData['dataset_dir'] + '/' + current_study + '/'
         dcm_list = self.get_immediate_subfiles(dcm_dir)
-        # print(dcm_list)
-        labelList =[]
+
+        eleList =[]
+
         for dcm in dcm_list:
             dcmPath = dcm_dir +  dcm
             pngPath = 'png/' + dcmPath + '.png'
-            #print(dcmPath)
-            #print(pngPath)
-            lableNew = QLabel()
+
+            ds = dcmread(dcmPath)
+            tag_list = [[0x0008, 0x0016],[0x0020, 0x000d]]
+
+            newDcmInfo = {}
+            for tag in tag_list:
+                newLine = {}
+                newLine['keyword']= ds[tag].keyword
+                newLine['value'] = ds[tag].value
+                newDcmInfo[str(ds[tag].tag)] = newLine
+
+
+            stringInfo = json.dumps(newDcmInfo)
+            print(stringInfo)
+
+            labelNew = QLabel()
             pixmap = QPixmap(pngPath)
-            lableNew.setPixmap(pixmap)
-            labelList += [lableNew]
+            labelNew.setPixmap(pixmap)
 
-        #print(labelList)
+            newEle = {}
+            newEle['filename'] = QLabel(dcm)
+            newEle ['info' ] = QLabel(stringInfo)
+            newEle ['label'] = labelNew
 
-        # for labelPng in labelList:
-        #     self.imageLayout.addWidget(labelPng)
+            eleList += [newEle]
 
-        labelPng = QLabel()
-        pixmap = QPixmap('./png/t/study0/image1.dcm.png')
-        labelPng.setPixmap(pixmap)
+        # clean imageLayout
+        for i in reversed(range(self.imageLayout.count())):
+            self.imageLayout.itemAt(i).widget().setParent(None)
 
-        #
-        # scroll_area = self.scroll
-        # draw_widget = self.widget
-        #
-        # for i in range(1, 50):
-        #     object = QLabel("TextLabel")
-        #     self.vbox.addWidget(object)
-        #
-        # draw_widget.setLayout(self.vbox)
-        #
-        #
-        #
-        # scroll_area.setWidget(draw_widget)
-        # lay = QVBoxLayout(self)
-        # lay.addWidget(scroll_area)
-        # #lay.addWidget(scroll_area)
-        #
-        # self.scroll.setFixedHeight(200)
-        # self.scroll.setFixedWidth(200)
-        #
-        # self.mainLayout.addLayout(lay, 2, 0, 1, 1)
-        #
-        #
-        # return
+
+
 
         scroll = QScrollArea()
         widget = QWidget()
         vbox = QHBoxLayout(widget)
 
 
-        for labelPng in labelList:
-            vbox.addWidget(labelPng)
+
+        for ele in eleList:
+            eleLayout = QVBoxLayout()
+            eleLayout.addWidget(ele['label'])
+            eleLayout.addWidget(ele['filename'])
+            eleLayout.addWidget(ele['info'])
+
+            vbox.addLayout(eleLayout)
+
 
         widget.setLayout(vbox)
-
+        scroll.setWidget(widget)
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-        #self.scroll.setWidgetResizable(True)
 
-        scroll.setWidget(widget)
-        scroll.setFixedHeight(300)
-        scroll.setFixedWidth(300)
-
-        #self.imageLayout.setFixedSize(640, 480)
+        scroll.setFixedWidth(1280)
+        scroll.setFixedHeight(600)
 
         self.imageLayout.addWidget(scroll)
 
-        # self.setGeometry(300, 300, 300, 200)
-
-    # def initUI(self):
-    #     self.scroll = QScrollArea()  # Scroll Area which contains the widgets, set as the centralWidget
-    #     self.widget = QWidget()  # Widget that contains the collection of Vertical Box
-    #     self.vbox = QVBoxLayout()  # The Vertical Box that contains the Horizontal Boxes of  labels and buttons
-    #
-    #     for i in range(1, 50):
-    #         object = QLabel("TextLabel")
-    #         self.vbox.addWidget(object)
-    #
-    #     self.widget.setLayout(self.vbox)
-    #
-    #     # Scroll Area Properties
-    #     self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-    #     self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-    #     self.scroll.setWidgetResizable(True)
-    #     self.scroll.setWidget(self.widget)
-    #
-    #     self.setCentralWidget(self.scroll)
-    #
-    #     self.setGeometry(600, 100, 1000, 900)
-    #
-    #
-    #     self.mainLayout .addLayout(self.vbox, 1, 0,1,1)
-    #
-    #     return
-
+    def imageClick(self):
+        pass
 
 
     def get_immediate_subfiles(self,a_dir):
         return [name for name in os.listdir(a_dir)]
-
 
 
 if __name__ == '__main__':

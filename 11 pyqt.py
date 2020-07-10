@@ -12,7 +12,7 @@ from PyQt5.QtCore import QDateTime, Qt, QTimer
 from PyQt5.QtWidgets import (QApplication,QComboBox,
                              QGridLayout, QHBoxLayout, QVBoxLayout,QLabel,
                              QPushButton, QWidget,QScrollArea)
-from PyQt5.QtGui import (QPixmap,QIcon)
+from PyQt5.QtGui import (QPixmap,QImage)
 
 #from PyQt5 import uic
 
@@ -41,12 +41,63 @@ def get_immediate_subdirectories(a_dir):
     return [name for name in os.listdir(a_dir)
             if os.path.isdir(os.path.join(a_dir, name))]
 
+def cvImg2qImg(cvImg):
+    height, width, channel = cvImg.shape
+    bytesPerLine = 3 * width
+    qImg = QImage(cvImg.data, width, height, bytesPerLine, QImage.Format_RGB888)
+    return qImg
+
+def getMarkedImg(pngPath,dcmInfo,json_whole_rebuild):
+
+    studyUid = dcmInfo['(0020, 000d)']['value']
+    instanceUid = dcmInfo['(0008, 0018)']['value']
+
+
+    for instance_marked in json_whole_rebuild[studyUid]['data']:
+        # print(instance_marked['instanceUid'])
+
+        if instanceUid == instance_marked['instanceUid'] :
+            print("cur  insID is :" + instance_marked['instanceUid'])
+            print("mark insID is :" + instanceUid)
+            print('matched')
+
+            markImg(pngPath,instance_marked)
+
+
+    pass
+
+def markImg(pngPath,instanceInfo):
+
+    print(pngPath)
+    print(instanceInfo)
+
+
+
+    pass
+
+
+
+
+
+
+def indexListAccordKey(list,key):
+    indexedList = {}
+    for item in list:
+        key_val = item[key]
+        item.pop(key, None)
+        indexedList[key_val] = item
+    return indexedList
 
 
 guiData = {}
 guiData['dataset_dir'] = 't'
 guiData['dir_names'] = sorted(get_immediate_subdirectories(guiData['dataset_dir']), key=natural_keys)
 
+with open('lumbar_train51_annotation.json') as f:
+    json_origin = json.load(f)
+
+
+guiData['json_whole_indexed'] = indexListAccordKey(json_origin,'studyUid')
 
 
 
@@ -138,29 +189,44 @@ class WidgetGallery(QScrollArea):
             pngPath = 'png/' + dcmPath + '.png'
 
             ds = dcmread(dcmPath)
-            tag_list = [[0x0008, 0x0016],[0x0020, 0x000d]]
+            tag_list = [[0x0020, 0x000d],
+                        [0x0020, 0x000e],
+                        [0x0008, 0x0018],
+                        [0x0020, 0x0052],
+                        [0x0010, 0x1010],
+                        [0x0010, 0x1030],
+                        [0x0018, 0x0050],
+                        [0x0018, 0x0088],
+                        [0x0028, 0x0030]]
 
             newDcmInfo = {}
             for tag in tag_list:
                 newLine = {}
                 newLine['keyword']= ds[tag].keyword
-                newLine['value'] = ds[tag].value
+                newLine['value'] = str(ds[tag].value)
                 newDcmInfo[str(ds[tag].tag)] = newLine
 
+            #print(newDcmInfo)
 
-            stringInfo = json.dumps(newDcmInfo)
-            print(stringInfo)
+            stringInfo = json.dumps(newDcmInfo,indent=4, sort_keys=True)
+            # print(stringInfo)
+
+
 
             labelNew = QLabel()
-            pixmap = QPixmap(pngPath)
+            finalImage = getMarkedImg(pngPath,newDcmInfo,guiData['json_whole_indexed'])
+
+            pixmap = QPixmap(finalImage)
             labelNew.setPixmap(pixmap)
 
             newEle = {}
             newEle['filename'] = QLabel(dcm)
-            newEle ['info' ] = QLabel(stringInfo)
+            newEle ['info'] = QLabel(stringInfo)
             newEle ['label'] = labelNew
 
             eleList += [newEle]
+
+        #exit()
 
         # clean imageLayout
         for i in reversed(range(self.imageLayout.count())):

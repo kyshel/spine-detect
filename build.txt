@@ -3,33 +3,24 @@
 
 
 # essential
-(0020, 000d) Study Instance UID                  UI: 1.2.430.2608.1.285.6961.2270.33760357
-
-(0020, 000e) Series Instance UID                 UI: 1.2.430.2608.1.285.6961.2270.33760357.1
-
-(0008, 0018) SOP Instance UID                    UI: 1.2.430.2608.1.285.6961.2270.33760357.1.3
+(0020, 000d) "Study" Instance UID                  UI: 1.2.430.2608.1.285.6961.2270.33760357
+(0020, 000e) "Series" Instance UID                 UI: 1.2.430.2608.1.285.6961.2270.33760357.1
+(0008, 0018) SOP "Instance" UID                    UI: 1.2.430.2608.1.285.6961.2270.33760357.1.3
 
 
 跨序列引用
 (0020, 0052) Frame of Reference UID              UI: 1.2.430.2608.1.33760357.88050
-
-
-
-
-
-
 (0010, 1010) Patient's Age                       AS: '035Y'
-
 (0010, 1030) Patient's Weight                    DS: "60.0"
 
 
 (0018, 0050) Slice Thickness                     DS: "20.0"
-
-
 (0018, 0088) Spacing Between Slices              DS: "21.0"
-
-
 (0028, 0030) Pixel Spacing                       DS: [1.406, 1.406]
+
+
+# question 
+what is annotation do ?
 
 
 

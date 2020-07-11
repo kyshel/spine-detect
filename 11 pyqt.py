@@ -20,6 +20,7 @@ import re
 
 import json
 
+from markImg import markImg
 
 def atoi(text):
     return int(text) if text.isdigit() else text
@@ -60,20 +61,16 @@ def getMarkedImg(pngPath,dcmInfo,json_whole_rebuild):
             print("cur  insID is :" + instance_marked['instanceUid'])
             print("mark insID is :" + instanceUid)
             print('matched')
-
-            markImg(pngPath,instance_marked)
-
-
-    pass
-
-def markImg(pngPath,instanceInfo):
-
-    print(pngPath)
-    print(instanceInfo)
-
-
+            #print(pngPath)
+            #print(instance_marked)
+            imgMarked = markImg(pngPath,instance_marked)
+            return cvImg2qImg(imgMarked)
+        else:
+            return pngPath
 
     pass
+
+
 
 
 
@@ -91,9 +88,15 @@ def indexListAccordKey(list,key):
 
 guiData = {}
 guiData['dataset_dir'] = 't'
+guiData['pngPathPrefix'] = 'png'
+guiData['dataset_json_file'] = 'lumbar_train51_annotation.json'
+
+# guiData['dataset_dir'] = 't2'
+# guiData['pngPathPrefix'] = 'png2'
+#guiData['dataset_json_file'] = 'lumbar_train150_annotation.json'
 guiData['dir_names'] = sorted(get_immediate_subdirectories(guiData['dataset_dir']), key=natural_keys)
 
-with open('lumbar_train51_annotation.json') as f:
+with open(guiData['dataset_json_file']) as f:
     json_origin = json.load(f)
 
 
@@ -130,7 +133,6 @@ class WidgetGallery(QScrollArea):
 
         button1 = QPushButton()
         button1.setText("Button1")
-        #button1.setIcon(QIcon('png/t/study0/image1.dcm.png'))
 
         button1.clicked.connect(self.button1_clicked)
 
@@ -186,7 +188,7 @@ class WidgetGallery(QScrollArea):
 
         for dcm in dcm_list:
             dcmPath = dcm_dir +  dcm
-            pngPath = 'png/' + dcmPath + '.png'
+            pngPath = guiData['pngPathPrefix'] + '/' + dcmPath + '.png'
 
             ds = dcmread(dcmPath)
             tag_list = [[0x0020, 0x000d],

@@ -26,6 +26,7 @@ def locImg(pngPath):
 
 
 
+
     #cv2.imshow('img2', imgScaled2)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
